@@ -173,5 +173,3 @@ source .venv/bin/activate
 pytest
 ```
 # abs-bot
-# abs-bot
-# abs-bot
