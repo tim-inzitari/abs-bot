@@ -1,0 +1,527 @@
+{
+  "gamePk": 831638,
+  "gameData": {
+    "datetime": {
+      "dateTime": "2026-03-01T18:05:00Z",
+      "originalDate": "2026-03-01",
+      "officialDate": "2026-03-01",
+      "dayNight": "day",
+      "time": "1:05",
+      "ampm": "PM"
+    },
+    "teams": {
+      "away": {
+        "springLeague": {
+          "id": 115,
+          "name": "Grapefruit League",
+          "link": "/api/v1/league/115",
+          "abbreviation": "GL"
+        },
+        "allStarStatus": "N",
+        "id": 110,
+        "name": "Baltimore Orioles",
+        "link": "/api/v1/teams/110",
+        "season": 2026,
+        "venue": {
+          "id": 2,
+          "name": "Oriole Park at Camden Yards",
+          "link": "/api/v1/venues/2"
+        },
+        "springVenue": {
+          "id": 2508,
+          "link": "/api/v1/venues/2508"
+        },
+        "teamCode": "bal",
+        "fileCode": "bal",
+        "abbreviation": "BAL",
+        "teamName": "Orioles",
+        "locationName": "Baltimore",
+        "firstYearOfPlay": "1901",
+        "league": {
+          "id": 103,
+          "name": "American League",
+          "link": "/api/v1/league/103"
+        },
+        "division": {
+          "id": 201,
+          "name": "American League East",
+          "link": "/api/v1/divisions/201"
+        },
+        "sport": {
+          "id": 1,
+          "link": "/api/v1/sports/1",
+          "name": "Major League Baseball"
+        },
+        "shortName": "Baltimore",
+        "record": {
+          "gamesPlayed": 9,
+          "wildCardGamesBack": "-",
+          "leagueGamesBack": "-",
+          "springLeagueGamesBack": "-",
+          "sportGamesBack": "-",
+          "divisionGamesBack": "-",
+          "conferenceGamesBack": "-",
+          "leagueRecord": {
+            "wins": 5,
+            "losses": 4,
+            "ties": 0,
+            "pct": ".556"
+          },
+          "records": {},
+          "divisionLeader": false,
+          "wins": 5,
+          "losses": 4,
+          "winningPercentage": ".556"
+        },
+        "franchiseName": "Baltimore",
+        "clubName": "Orioles",
+        "active": true
+      },
+      "home": {
+        "springLeague": {
+          "id": 115,
+          "name": "Grapefruit League",
+          "link": "/api/v1/league/115",
+          "abbreviation": "GL"
+        },
+        "allStarStatus": "N",
+        "id": 111,
+        "name": "Boston Red Sox",
+        "link": "/api/v1/teams/111",
+        "season": 2026,
+        "venue": {
+          "id": 3,
+          "name": "Fenway Park",
+          "link": "/api/v1/venues/3"
+        },
+        "springVenue": {
+          "id": 4309,
+          "link": "/api/v1/venues/4309"
+        },
+        "teamCode": "bos",
+        "fileCode": "bos",
+        "abbreviation": "BOS",
+        "teamName": "Red Sox",
+        "locationName": "Boston",
+        "firstYearOfPlay": "1901",
+        "league": {
+          "id": 103,
+          "name": "American League",
+          "link": "/api/v1/league/103"
+        },
+        "division": {
+          "id": 201,
+          "name": "American League East",
+          "link": "/api/v1/divisions/201"
+        },
+        "sport": {
+          "id": 1,
+          "link": "/api/v1/sports/1",
+          "name": "Major League Baseball"
+        },
+        "shortName": "Boston",
+        "record": {
+          "gamesPlayed": 9,
+          "wildCardGamesBack": "-",
+          "leagueGamesBack": "-",
+          "springLeagueGamesBack": "-",
+          "sportGamesBack": "-",
+          "divisionGamesBack": "-",
+          "conferenceGamesBack": "-",
+          "leagueRecord": {
+            "wins": 5,
+            "losses": 4,
+            "ties": 0,
+            "pct": ".556"
+          },
+          "records": {},
+          "divisionLeader": false,
+          "wins": 5,
+          "losses": 4,
+          "winningPercentage": ".556"
+        },
+        "franchiseName": "Boston",
+        "clubName": "Red Sox",
+        "active": true
+      }
+    }
+  },
+  "liveData": {
+    "boxscore": {
+      "officials": [
+        {
+          "official": {
+            "id": 686967,
+            "fullName": "Denver Dangerfield",
+            "link": "/api/v1/people/686967"
+          },
+          "officialType": "Home Plate"
+        },
+        {
+          "official": {
+            "id": 658325,
+            "fullName": "Tyler Jones",
+            "link": "/api/v1/people/658325"
+          },
+          "officialType": "First Base"
+        },
+        {
+          "official": {
+            "id": 623949,
+            "fullName": "Clint Vondrak",
+            "link": "/api/v1/people/623949"
+          },
+          "officialType": "Second Base"
+        },
+        {
+          "official": {
+            "id": 658292,
+            "fullName": "Derek Thomas",
+            "link": "/api/v1/people/658292"
+          },
+          "officialType": "Third Base"
+        }
+      ]
+    },
+    "plays": {
+      "allPlays": [
+        {
+          "about": {
+            "atBatIndex": 0,
+            "halfInning": "top",
+            "isTopInning": true,
+            "inning": 1,
+            "startTime": "2026-03-01T18:08:50.948Z",
+            "endTime": "2026-03-01T18:10:55.039Z",
+            "isComplete": true,
+            "isScoringPlay": false,
+            "hasReview": false,
+            "hasOut": true,
+            "captivatingIndex": 14
+          },
+          "matchup": {
+            "batter": {
+              "id": 681297,
+              "fullName": "Colton Cowser",
+              "link": "/api/v1/people/681297"
+            },
+            "batSide": {
+              "code": "L",
+              "description": "Left"
+            },
+            "pitcher": {
+              "id": 624133,
+              "fullName": "Ranger Suarez",
+              "link": "/api/v1/people/624133"
+            },
+            "pitchHand": {
+              "code": "L",
+              "description": "Left"
+            },
+            "batterHotColdZones": [],
+            "pitcherHotColdZones": [],
+            "splits": {
+              "batter": "vs_LHP",
+              "pitcher": "vs_LHB",
+              "menOnBase": "Empty"
+            }
+          },
+          "playEvents": [
+            {
+              "details": {
+                "description": "Status Change - Pre-Game",
+                "event": "Game Advisory",
+                "eventType": "game_advisory",
+                "awayScore": 0,
+                "homeScore": 0,
+                "isScoringPlay": false,
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "description": "Status Change - Warmup",
+                "event": "Game Advisory",
+                "eventType": "game_advisory",
+                "awayScore": 0,
+                "homeScore": 0,
+                "isScoringPlay": false,
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "description": "Status Change - In Progress",
+                "event": "Game Advisory",
+                "eventType": "game_advisory",
+                "awayScore": 0,
+                "homeScore": 0,
+                "isScoringPlay": false,
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "B",
+                  "description": "Ball"
+                },
+                "description": "Ball",
+                "code": "B",
+                "ballColor": "rgba(39, 161, 39, 1.0)",
+                "trailColor": "rgba(188, 0, 33, 1.0)",
+                "isInPlay": false,
+                "isStrike": false,
+                "isBall": true,
+                "type": {
+                  "code": "FF",
+                  "description": "Four-Seam Fastball"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "F",
+                  "description": "Foul"
+                },
+                "description": "Foul",
+                "code": "F",
+                "ballColor": "rgba(170, 21, 11, 1.0)",
+                "trailColor": "rgba(50, 0, 221, 1.0)",
+                "isInPlay": false,
+                "isStrike": true,
+                "isBall": false,
+                "type": {
+                  "code": "SI",
+                  "description": "Sinker"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            }
+          ]
+        },
+        {
+          "about": {
+            "atBatIndex": 1,
+            "halfInning": "top",
+            "isTopInning": true,
+            "inning": 1,
+            "startTime": "2026-03-01T18:11:18.042Z",
+            "endTime": "2026-03-01T18:12:08.005Z",
+            "isComplete": true,
+            "isScoringPlay": false,
+            "hasReview": false,
+            "hasOut": true,
+            "captivatingIndex": 0
+          },
+          "matchup": {
+            "batter": {
+              "id": 677942,
+              "fullName": "Blaze Alexander",
+              "link": "/api/v1/people/677942"
+            },
+            "batSide": {
+              "code": "R",
+              "description": "Right"
+            },
+            "pitcher": {
+              "id": 624133,
+              "fullName": "Ranger Suarez",
+              "link": "/api/v1/people/624133"
+            },
+            "pitchHand": {
+              "code": "L",
+              "description": "Left"
+            },
+            "batterHotColdZones": [],
+            "pitcherHotColdZones": [],
+            "splits": {
+              "batter": "vs_LHP",
+              "pitcher": "vs_RHB",
+              "menOnBase": "Empty"
+            }
+          },
+          "playEvents": [
+            {
+              "details": {
+                "call": {
+                  "code": "F",
+                  "description": "Foul"
+                },
+                "description": "Foul",
+                "code": "F",
+                "ballColor": "rgba(170, 21, 11, 1.0)",
+                "trailColor": "rgba(152, 0, 101, 1.0)",
+                "isInPlay": false,
+                "isStrike": true,
+                "isBall": false,
+                "type": {
+                  "code": "FC",
+                  "description": "Cutter"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "B",
+                  "description": "Ball"
+                },
+                "description": "Ball",
+                "code": "B",
+                "ballColor": "rgba(39, 161, 39, 1.0)",
+                "trailColor": "rgba(0, 85, 254, 1.0)",
+                "isInPlay": false,
+                "isStrike": false,
+                "isBall": true,
+                "type": {
+                  "code": "CH",
+                  "description": "Changeup"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "X",
+                  "description": "In play, out(s)"
+                },
+                "description": "In play, out(s)",
+                "code": "X",
+                "ballColor": "rgba(26, 86, 190, 1.0)",
+                "trailColor": "rgba(152, 0, 101, 1.0)",
+                "isInPlay": true,
+                "isStrike": false,
+                "isBall": false,
+                "type": {
+                  "code": "FC",
+                  "description": "Cutter"
+                },
+                "isOut": true,
+                "hasReview": false
+              }
+            }
+          ]
+        },
+        {
+          "about": {
+            "atBatIndex": 2,
+            "halfInning": "top",
+            "isTopInning": true,
+            "inning": 1,
+            "startTime": "2026-03-01T18:12:16.616Z",
+            "endTime": "2026-03-01T18:13:21.104Z",
+            "isComplete": true,
+            "isScoringPlay": false,
+            "hasReview": false,
+            "hasOut": true,
+            "captivatingIndex": 0
+          },
+          "matchup": {
+            "batter": {
+              "id": 687637,
+              "fullName": "Dylan Beavers",
+              "link": "/api/v1/people/687637"
+            },
+            "batSide": {
+              "code": "L",
+              "description": "Left"
+            },
+            "pitcher": {
+              "id": 624133,
+              "fullName": "Ranger Suarez",
+              "link": "/api/v1/people/624133"
+            },
+            "pitchHand": {
+              "code": "L",
+              "description": "Left"
+            },
+            "batterHotColdZones": [],
+            "pitcherHotColdZones": [],
+            "splits": {
+              "batter": "vs_LHP",
+              "pitcher": "vs_LHB",
+              "menOnBase": "Empty"
+            }
+          },
+          "playEvents": [
+            {
+              "details": {
+                "call": {
+                  "code": "C",
+                  "description": "Called Strike"
+                },
+                "description": "Called Strike",
+                "code": "C",
+                "ballColor": "rgba(170, 21, 11, 1.0)",
+                "trailColor": "rgba(188, 0, 33, 1.0)",
+                "isInPlay": false,
+                "isStrike": true,
+                "isBall": false,
+                "type": {
+                  "code": "FF",
+                  "description": "Four-Seam Fastball"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "B",
+                  "description": "Ball"
+                },
+                "description": "Ball",
+                "code": "B",
+                "ballColor": "rgba(39, 161, 39, 1.0)",
+                "trailColor": "rgba(0, 85, 254, 1.0)",
+                "isInPlay": false,
+                "isStrike": false,
+                "isBall": true,
+                "type": {
+                  "code": "CH",
+                  "description": "Changeup"
+                },
+                "isOut": false,
+                "hasReview": false
+              }
+            },
+            {
+              "details": {
+                "call": {
+                  "code": "X",
+                  "description": "In play, out(s)"
+                },
+                "description": "In play, out(s)",
+                "code": "X",
+                "ballColor": "rgba(26, 86, 190, 1.0)",
+                "trailColor": "rgba(0, 85, 254, 1.0)",
+                "isInPlay": true,
+                "isStrike": false,
+                "isBall": false,
+                "type": {
+                  "code": "CH",
+                  "description": "Changeup"
+                },
+                "isOut": true,
+                "hasReview": false
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,37 @@
+services:
+  ump-db:
+    image: postgres:16-alpine
+    container_name: ump-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-absbot}
+      POSTGRES_USER: ${POSTGRES_USER:-absbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-absbot}
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+  ump-bot:
+    build: .
+    container_name: ump-bot
+    depends_on:
+      - ump-db
+    env_file:
+      - .env
+    environment:
+      APP_ROLE: bot
+      DATABASE_URL: ${DATABASE_URL:-postgresql://absbot:absbot@ump-db:5432/absbot}
+      PYTHONUNBUFFERED: "1"
+    restart: unless-stopped
+  ump-updater:
+    build: .
+    container_name: ump-updater
+    depends_on:
+      - ump-db
+    env_file:
+      - .env
+    environment:
+      APP_ROLE: updater
+      DATABASE_URL: ${DATABASE_URL:-postgresql://absbot:absbot@ump-db:5432/absbot}
+      PYTHONUNBUFFERED: "1"
+    restart: unless-stopped
