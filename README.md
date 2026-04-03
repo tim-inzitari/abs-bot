@@ -76,7 +76,7 @@ POSTGRES_PASSWORD=your-password
 ## Data behavior
 
 - First startup seeds the DB once if empty.
-- Bot queries refresh only current-day data on demand for the selected season.
+- Bot queries refresh current-day data on demand for the selected season, including live Savant leaderboard rows and live umpire pitch-audit totals.
 - Updater reconciles the previous day at 3 AM Eastern.
 - Updater also sweeps the last `INTEGRITY_SWEEP_DAYS` days to catch delayed corrections without broad rebuilds.
 - Date-based refreshes are season-guarded, so a past-season query will not write today’s games into the wrong season table.
@@ -104,7 +104,7 @@ Responses are intentionally short:
 Example:
 
 ```text
-Umpire CB Buckner: 35.0% accuracy (70/200) [pitcher 25/51 batter 14/33 catcher 31/74] [rank 12/34]
+Umpire CB Buckner: 65.0% accuracy (130/200) [pitcher 1/2 batter 0/1 catcher 1/2] [rank 12/34]
 Unchallenged: 97.8% [1760/1800] | total [1890/2000]
 Unresolved: 1
 ```

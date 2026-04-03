@@ -391,7 +391,7 @@ Stores game-level called-pitch audit totals for each umpire:
 - `unchallenged_correct`
 - `unchallenged_incorrect`
 
-This table powers the season-wide `Unchallenged` and `total` lines without recalculating pitch geometry on every Discord query.
+This table powers the season-wide `Unchallenged` and `total` lines. It is updated during live current-day refreshes and then reconciled cleanly again during the 3 AM Eastern maintenance pass.
 
 ### `untracked_errors`
 
@@ -440,10 +440,11 @@ Behavior:
 - update `games`
 - update `umpire_game_stats`
 - update `challenge_events`
+- update `umpire_pitch_audit`
 - update `untracked_errors`
-- skip heavy pitch-audit recalculation
+- recompute live current-day umpire pitch-audit totals
 
-This keeps live queries reasonably fast.
+This keeps in-game umpire totals live while still letting the nightly reconcile rewrite the same rows authoritatively.
 
 If the selected season does not match today’s calendar year, the refresh safely skips.
 
@@ -785,12 +786,13 @@ Worst case:
 
 ### Current-Day Accuracy vs Nightly Accuracy
 
-Ad hoc current-day refresh intentionally skips heavy pitch auditing.
+Ad hoc current-day refresh now recomputes live umpire pitch-audit totals, so same-day `Unchallenged` and `total` lines should move during the game.
 
-That means:
+The 3 AM Eastern maintenance pass is still authoritative because it:
 
-- same-day umpire `Unchallenged` lines may lag
-- nightly reconciliation is the authoritative cleanup path
+- rewrites prior-day rows cleanly
+- deduplicates per-game data
+- rescans the rolling integrity window
 
 ### Single Region / Timezone Assumption
 
@@ -819,7 +821,7 @@ Examples of realistic future additions:
 
 - If cached data is wrong because historical parsing changed, use the CLI `full-refresh`.
 - If one specific date is wrong, use `reconcile-date` or Discord `/admin_reconcile`.
-- If the bot appears live but umpire `Unchallenged` data looks stale, wait for the nightly updater or run a manual maintenance command from the updater shell.
+- If the bot appears live but umpire `Unchallenged` data looks stale during a live game, rerun the query once to trigger another current-day refresh. The nightly updater still performs the clean authoritative rewrite afterward.
 - If an umpire query returns a strange spelling, use `/umpires` to inspect the cached alias set.
 
 ## Key Files

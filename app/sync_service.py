@@ -292,6 +292,20 @@ class SyncService:
         if self.progress is not None:
             self.progress(message)
 
+    async def _refresh_live_leaderboards(self, year: int, game_type: str) -> None:
+        self._emit_progress(f"Today refresh: refreshing live Savant leaderboards for {year} {game_type}")
+        for challenge_type in ["batter", "pitcher", "catcher", "batting-team"]:
+            leaderboard = await self.savant_client.fetch_leaderboard(
+                year,
+                challenge_type,
+                game_type,
+                force_refresh=True,
+            )
+            self.db.replace_leaderboard_rows(year, game_type, challenge_type, leaderboard.rows)
+            self._emit_progress(
+                f"Today refresh: stored live {challenge_type} leaderboard ({len(leaderboard.rows)} rows)"
+            )
+
     async def ensure_dataset(self, year: int, game_type: str) -> None:
         if self.db.get_sync_state(year, game_type, "full"):
             return
@@ -385,7 +399,9 @@ class SyncService:
 
     async def refresh_today(self, year: int, game_type: str) -> None:
         self._emit_progress(f"Today refresh: checking {_today_eastern_iso()} for {year} {game_type}")
-        await self.reconcile_date(year, game_type, _today_eastern_iso(), sync_kind="today", include_pitch_audit=False)
+        if _is_same_season(_today_eastern_iso(), year):
+            await self._refresh_live_leaderboards(year, game_type)
+        await self.reconcile_date(year, game_type, _today_eastern_iso(), sync_kind="today", include_pitch_audit=True)
         self._emit_progress(f"Today refresh complete for {year} {game_type}")
 
     async def reconcile_previous_day(self, year: int, game_type: str) -> None:

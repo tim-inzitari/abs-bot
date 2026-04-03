@@ -7,12 +7,41 @@ from app.sync_service import SyncService
 
 
 class FakeSavantClient:
-    async def fetch_leaderboard(self, year: int, challenge_type: str, game_type: str):
+    def __init__(self):
+        self.calls = []
+
+    async def fetch_leaderboard(self, year: int, challenge_type: str, game_type: str, force_refresh: bool = False):
+        self.calls.append((year, challenge_type, game_type, force_refresh))
         class Leaderboard:
             def __init__(self, rows):
                 self.rows = rows
 
         rows = [{"id": 1, "player_name": f"{challenge_type}-name", "team_abbr": "DET", "n_challenges": 2, "n_overturns": 1}]
+        return Leaderboard(rows)
+
+
+class RefreshingSavantClient(FakeSavantClient):
+    def __init__(self):
+        super().__init__()
+        self.version = 0
+
+    async def fetch_leaderboard(self, year: int, challenge_type: str, game_type: str, force_refresh: bool = False):
+        self.calls.append((year, challenge_type, game_type, force_refresh))
+
+        class Leaderboard:
+            def __init__(self, rows):
+                self.rows = rows
+
+        challenge_count = 2 if self.version == 0 else 5
+        rows = [
+            {
+                "id": 1,
+                "player_name": f"{challenge_type}-name",
+                "team_abbr": "DET",
+                "n_challenges": challenge_count,
+                "n_overturns": 1,
+            }
+        ]
         return Leaderboard(rows)
 
 
@@ -191,6 +220,106 @@ class RecordingScheduleMlbClient(FakeMlbClient):
         return await super().get_schedule_games(year, game_type, start_date, end_date)
 
 
+class LiveAuditMlbClient(FakeMlbClient):
+    def __init__(self):
+        super().__init__()
+        self.feed_version = 0
+
+    async def get_schedule_games(self, year: int, game_type: str, start_date=None, end_date=None):
+        return [{"game_pk": 10, "official_date": start_date or "2026-03-31", "matchup": "Rockies @ Tigers"}]
+
+    async def get_live_feed(self, game_pk: int):
+        if self.feed_version == 0:
+            play_events = [
+                {
+                    "details": {
+                        "call": {"code": "B", "description": "Ball"},
+                        "description": "Ball",
+                        "code": "B",
+                    },
+                    "pitchData": {
+                        "coordinates": {"pX": 1.1, "pZ": 2.2},
+                        "strikeZoneTop": 3.4,
+                        "strikeZoneBottom": 1.6,
+                        "strikeZoneWidth": 1.4166666667,
+                    },
+                },
+                {
+                    "details": {
+                        "call": {"code": "C", "description": "Called Strike"},
+                        "description": "Called Strike",
+                        "code": "C",
+                    },
+                    "pitchData": {
+                        "coordinates": {"pX": 0.0, "pZ": 2.3},
+                        "strikeZoneTop": 3.4,
+                        "strikeZoneBottom": 1.6,
+                        "strikeZoneWidth": 1.4166666667,
+                    },
+                },
+            ]
+        else:
+            play_events = [
+                {
+                    "details": {
+                        "call": {"code": "B", "description": "Ball"},
+                        "description": "Ball",
+                        "code": "B",
+                    },
+                    "pitchData": {
+                        "coordinates": {"pX": 1.1, "pZ": 2.2},
+                        "strikeZoneTop": 3.4,
+                        "strikeZoneBottom": 1.6,
+                        "strikeZoneWidth": 1.4166666667,
+                    },
+                },
+                {
+                    "details": {
+                        "call": {"code": "C", "description": "Called Strike"},
+                        "description": "Called Strike",
+                        "code": "C",
+                    },
+                    "pitchData": {
+                        "coordinates": {"pX": 0.0, "pZ": 2.3},
+                        "strikeZoneTop": 3.4,
+                        "strikeZoneBottom": 1.6,
+                        "strikeZoneWidth": 1.4166666667,
+                    },
+                },
+                {
+                    "details": {
+                        "call": {"code": "C", "description": "Called Strike"},
+                        "description": "Called Strike",
+                        "code": "C",
+                    },
+                    "pitchData": {
+                        "coordinates": {"pX": 0.0, "pZ": 3.8},
+                        "strikeZoneTop": 3.4,
+                        "strikeZoneBottom": 1.6,
+                        "strikeZoneWidth": 1.4166666667,
+                    },
+                },
+            ]
+
+        return {
+            "liveData": {
+                "boxscore": {"officials": [{"officialType": "Home Plate", "official": {"fullName": "Carlos Torres"}}]},
+                "plays": {
+                    "allPlays": [
+                        {
+                            "about": {"inning": 1},
+                            "matchup": {
+                                "batter": {"fullName": "Batter"},
+                                "pitcher": {"fullName": "Pitcher"},
+                            },
+                            "playEvents": play_events,
+                        }
+                    ]
+                },
+            }
+        }
+
+
 class PostponedScheduleMlbClient(FakeMlbClient):
     def __init__(self):
         super().__init__()
@@ -365,6 +494,78 @@ async def test_reconcile_date_skips_cross_season_target_date(tmp_path: Path) -> 
     assert mlb.calls == []
     assert db.fetch_umpire_games(2025, "regular") == []
     assert db.get_sync_state(2025, "regular", "today") is not None
+
+
+@pytest.mark.asyncio
+async def test_refresh_today_updates_live_pitch_audit_without_duplicates(monkeypatch, tmp_path: Path) -> None:
+    db = Database(str(tmp_path / "absbot.sqlite3"))
+    db.ensure_schema()
+    mlb = LiveAuditMlbClient()
+    service = SyncService(db=db, savant_client=FakeSavantClient(), mlb_stats_client=mlb)
+
+    class FrozenDateTime:
+        @staticmethod
+        def now(tz=None):
+            import datetime as dt
+            return dt.datetime(2026, 4, 3, 13, 0, tzinfo=tz)
+
+        @staticmethod
+        def utcnow():
+            import datetime as dt
+            return dt.datetime(2026, 4, 3, 17, 0)
+
+    monkeypatch.setattr("app.sync_service.datetime", FrozenDateTime)
+
+    await service.refresh_today(2026, "regular")
+    audits = db.fetch_umpire_pitch_audits(2026, "regular", umpire_name="Carlos Torres")
+    assert len(audits) == 1
+    assert audits[0]["called_pitches"] == 2
+    assert audits[0]["unchallenged_correct"] == 2
+    assert audits[0]["unchallenged_incorrect"] == 0
+
+    mlb.feed_version = 1
+    await service.refresh_today(2026, "regular")
+    audits = db.fetch_umpire_pitch_audits(2026, "regular", umpire_name="Carlos Torres")
+    assert len(audits) == 1
+    assert audits[0]["called_pitches"] == 3
+    assert audits[0]["unchallenged_correct"] == 2
+    assert audits[0]["unchallenged_incorrect"] == 1
+
+
+@pytest.mark.asyncio
+async def test_refresh_today_refreshes_live_savant_leaderboards(monkeypatch, tmp_path: Path) -> None:
+    db = Database(str(tmp_path / "absbot.sqlite3"))
+    db.ensure_schema()
+    savant = RefreshingSavantClient()
+    service = SyncService(db=db, savant_client=savant, mlb_stats_client=LiveAuditMlbClient())
+
+    class FrozenDateTime:
+        @staticmethod
+        def now(tz=None):
+            import datetime as dt
+            return dt.datetime(2026, 4, 3, 13, 0, tzinfo=tz)
+
+        @staticmethod
+        def utcnow():
+            import datetime as dt
+            return dt.datetime(2026, 4, 3, 17, 0)
+
+    monkeypatch.setattr("app.sync_service.datetime", FrozenDateTime)
+
+    await service.refresh_today(2026, "regular")
+    first_rows = db.fetch_leaderboard_rows(2026, "regular", "batter")
+    assert first_rows[0]["n_challenges"] == 2
+
+    savant.version = 1
+    await service.refresh_today(2026, "regular")
+    second_rows = db.fetch_leaderboard_rows(2026, "regular", "batter")
+    assert second_rows[0]["n_challenges"] == 5
+    assert savant.calls[-4:] == [
+        (2026, "batter", "regular", True),
+        (2026, "pitcher", "regular", True),
+        (2026, "catcher", "regular", True),
+        (2026, "batting-team", "regular", True),
+    ]
 
 
 @pytest.mark.asyncio

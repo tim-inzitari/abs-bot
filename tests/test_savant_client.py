@@ -52,3 +52,28 @@ async def test_fetch_leaderboard_uses_cache() -> None:
     assert first.rows == [{"player_name": "A", "id": 1}]
     assert second.rows == first.rows
     assert len(session.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_fetch_leaderboard_force_refresh_bypasses_cache() -> None:
+    class RollingSession:
+        def __init__(self) -> None:
+            self.calls = []
+            self.payloads = [
+                'const absData = [{"player_name":"A","id":1,"n_challenges":1}];',
+                'const absData = [{"player_name":"A","id":1,"n_challenges":2}];',
+            ]
+
+        def get(self, url: str) -> FakeTextResponse:
+            self.calls.append(url)
+            return FakeTextResponse(self.payloads.pop(0))
+
+    session = RollingSession()
+    client = BaseballSavantClient(session, ttl_seconds=60)
+
+    first = await client.fetch_leaderboard(2026, "batter", "regular")
+    second = await client.fetch_leaderboard(2026, "batter", "regular", force_refresh=True)
+
+    assert first.rows[0]["n_challenges"] == 1
+    assert second.rows[0]["n_challenges"] == 2
+    assert len(session.calls) == 2

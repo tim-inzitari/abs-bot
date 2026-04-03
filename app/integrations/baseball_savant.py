@@ -27,10 +27,11 @@ class BaseballSavantClient:
         challenge_type: str,
         game_type: str,
         page_size: int = 500,
+        force_refresh: bool = False,
     ) -> SavantLeaderboard:
         cache_key = f"{year}:{challenge_type}:{game_type}:{page_size}"
         cached = self.cache.get(cache_key)
-        if cached is not None:
+        if (not force_refresh) and cached is not None:
             return cached
 
         params = {
