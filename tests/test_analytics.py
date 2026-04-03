@@ -103,7 +103,7 @@ async def test_team_report_includes_opponent_counts_when_available(db: Database)
 
     report = await service.build_team_report("Detroit", 2026, "regular")
 
-    assert report.summary == "Team Detroit Tigers: 60.0% (12/20) accuracy [opp 40.0% (4/10)] [rank 1/1]"
+    assert report.summary == "Team Detroit Tigers: batting 60.0% (12/20) fielding 50.0% (10/20) [pitcher 4/8 catcher 6/12]"
 
 
 @pytest.mark.asyncio

@@ -191,6 +191,42 @@ class RecordingScheduleMlbClient(FakeMlbClient):
         return await super().get_schedule_games(year, game_type, start_date, end_date)
 
 
+class PostponedScheduleMlbClient(FakeMlbClient):
+    def __init__(self):
+        super().__init__()
+        self.scanned_game_pks = []
+
+    async def get_schedule_games(self, year: int, game_type: str, start_date=None, end_date=None):
+        return [
+            {
+                "game_pk": 10,
+                "official_date": "2026-03-31",
+                "reschedule_date": None,
+                "away_team_name": "Rockies",
+                "home_team_name": "Tigers",
+                "matchup": "Rockies @ Tigers",
+                "detailed_state": "Final",
+                "abstract_game_state": "Final",
+                "coded_game_state": "F",
+            },
+            {
+                "game_pk": 11,
+                "official_date": "2026-04-01",
+                "reschedule_date": "2026-04-01T18:10:00Z",
+                "away_team_name": "Blue Jays",
+                "home_team_name": "White Sox",
+                "matchup": "Blue Jays @ White Sox",
+                "detailed_state": "Postponed",
+                "abstract_game_state": "Final",
+                "coded_game_state": "D",
+            },
+        ]
+
+    async def get_live_feed(self, game_pk: int):
+        self.scanned_game_pks.append(game_pk)
+        return await super().get_live_feed(game_pk)
+
+
 class BoxscoreSummaryMlbClient(FakeMlbClient):
     async def get_live_feed(self, game_pk: int):
         return {
@@ -329,6 +365,34 @@ async def test_reconcile_date_skips_cross_season_target_date(tmp_path: Path) -> 
     assert mlb.calls == []
     assert db.fetch_umpire_games(2025, "regular") == []
     assert db.get_sync_state(2025, "regular", "today") is not None
+
+
+@pytest.mark.asyncio
+async def test_reconcile_date_skips_postponed_or_rescheduled_games(tmp_path: Path) -> None:
+    db = Database(str(tmp_path / "absbot.sqlite3"))
+    db.ensure_schema()
+    db.upsert_umpire_games(2026, "regular", [(11, "2026-03-31", "Blue Jays @ White Sox", "CB Buckner", 2, 1, 1)])
+    db.upsert_challenge_events(
+        2026,
+        "regular",
+        [(11, "stale", "2026-03-31", "Blue Jays @ White Sox", "CB Buckner", 1, "Batter", "Pitcher", None, "batter", "confirmed", "stale")],
+    )
+    db.upsert_umpire_pitch_audits(
+        2026,
+        "regular",
+        [(11, "2026-03-31", "Blue Jays @ White Sox", "CB Buckner", 20, 2, 15, 3)],
+    )
+    mlb = PostponedScheduleMlbClient()
+    service = SyncService(db=db, savant_client=FakeSavantClient(), mlb_stats_client=mlb)
+
+    await service.reconcile_date(2026, "regular", "2026-03-31", sync_kind="reconcile")
+
+    assert mlb.scanned_game_pks == [10]
+    games = db.fetch_games(2026, "regular")
+    assert any(row["game_pk"] == 11 and row["official_date"] == "2026-04-01" for row in games)
+    assert all(row["game_pk"] != 11 for row in db.fetch_umpire_games(2026, "regular"))
+    assert all(row["game_pk"] != 11 for row in db.fetch_challenge_events(2026, "regular"))
+    assert all(row["game_pk"] != 11 for row in db.fetch_umpire_pitch_audits(2026, "regular"))
 
 
 @pytest.mark.asyncio

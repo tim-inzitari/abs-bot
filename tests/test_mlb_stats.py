@@ -46,6 +46,13 @@ async def test_get_schedule_games_formats_matchup() -> None:
                         "games": [
                             {
                                 "gamePk": 10,
+                                "officialDate": "2026-08-23",
+                                "rescheduleDate": None,
+                                "status": {
+                                    "detailedState": "Final",
+                                    "abstractGameState": "Final",
+                                    "codedGameState": "F",
+                                },
                                 "teams": {
                                     "away": {"team": {"name": "Rockies"}},
                                     "home": {"team": {"name": "Tigers"}},
@@ -65,9 +72,13 @@ async def test_get_schedule_games_formats_matchup() -> None:
         {
             "game_pk": 10,
             "official_date": "2026-08-23",
+            "reschedule_date": None,
             "away_team_name": "Rockies",
             "home_team_name": "Tigers",
             "matchup": "Rockies @ Tigers",
+            "detailed_state": "Final",
+            "abstract_game_state": "Final",
+            "coded_game_state": "F",
         }
     ]
 

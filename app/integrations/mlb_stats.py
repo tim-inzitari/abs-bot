@@ -115,9 +115,13 @@ class MlbStatsClient:
                     {
                         "game_pk": game["gamePk"],
                         "official_date": game.get("officialDate") or date.get("date"),
+                        "reschedule_date": game.get("rescheduleDate"),
                         "away_team_name": away,
                         "home_team_name": home,
                         "matchup": f"{away} @ {home}",
+                        "detailed_state": game.get("status", {}).get("detailedState", ""),
+                        "abstract_game_state": game.get("status", {}).get("abstractGameState", ""),
+                        "coded_game_state": game.get("status", {}).get("codedGameState", ""),
                     }
                 )
         return games

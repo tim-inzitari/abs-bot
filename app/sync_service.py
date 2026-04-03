@@ -30,6 +30,18 @@ def _should_log_progress(index: int, total: int) -> bool:
     return index in {1, total} or index % 25 == 0
 
 
+def _schedule_scan_skip_reason(game: Dict[str, Any], target_date: Optional[str] = None) -> Optional[str]:
+    official_date = str(game.get("official_date") or "")
+    if target_date and official_date != target_date:
+        return f"official date moved to {official_date}"
+
+    detailed_state = str(game.get("detailed_state") or "").lower()
+    if any(token in detailed_state for token in ["postpon", "cancel", "suspend"]):
+        return f"status {game.get('detailed_state') or 'unknown'}"
+
+    return None
+
+
 def _position_to_challenger_role(position: Optional[str]) -> str:
     normalized = (position or "").upper()
     if normalized == "P":
@@ -316,7 +328,11 @@ class SyncService:
         self._emit_progress(f"Full refresh: stored player positions ({len(positions)} players)")
 
         games = await self.mlb_stats_client.get_schedule_games(year, game_type)
-        historical_games = [game for game in games if str(game["official_date"]) < _today_eastern_iso()]
+        historical_games = [
+            game
+            for game in games
+            if str(game["official_date"]) < _today_eastern_iso() and _schedule_scan_skip_reason(game) is None
+        ]
         self._emit_progress(f"Full refresh: scanning {len(historical_games)} historical games")
         scanned_at = datetime.utcnow().isoformat()
         game_catalog_rows: List[Tuple[int, str, Optional[str], Optional[str], str, Optional[str], str]] = []
@@ -403,15 +419,24 @@ class SyncService:
                 f"Reconcile {sync_kind}: skipped {target_date} because it is outside season {year}"
             )
             return
-        games = await self.mlb_stats_client.get_schedule_games(year, game_type, start_date=target_date, end_date=target_date)
-        if not games:
+        schedule_games = await self.mlb_stats_client.get_schedule_games(year, game_type, start_date=target_date, end_date=target_date)
+        if not schedule_games:
             self.db.set_sync_state(year, game_type, sync_kind, datetime.utcnow().isoformat())
             self._emit_progress(f"Reconcile {sync_kind}: no games found for {target_date}")
             return
 
-        game_pks = [int(game["game_pk"]) for game in games]
+        game_pks = [int(game["game_pk"]) for game in schedule_games]
+        eligible_games: List[Dict[str, Any]] = []
+        skipped_games: List[Tuple[Dict[str, Any], str]] = []
+        for game in schedule_games:
+            skip_reason = _schedule_scan_skip_reason(game, target_date=target_date)
+            if skip_reason is None:
+                eligible_games.append(game)
+            else:
+                skipped_games.append((game, skip_reason))
+
         self._emit_progress(
-            f"Reconcile {sync_kind}: scanning {len(games)} game(s) for {target_date}"
+            f"Reconcile {sync_kind}: scanning {len(eligible_games)} eligible game(s) for {target_date}"
         )
         scanned_at = datetime.utcnow().isoformat()
         game_catalog_rows: List[Tuple[int, str, Optional[str], Optional[str], str, Optional[str], str]] = []
@@ -419,8 +444,24 @@ class SyncService:
         audit_rows: List[Tuple[int, str, str, str, int, int, int, int]] = []
         event_rows: List[Tuple[int, str, str, str, str, Optional[int], Optional[str], Optional[str], Optional[str], str, str, str]] = []
         errors: List[Tuple[Optional[str], Optional[str], Optional[str], str, Optional[int]]] = []
-        total_games = len(games)
-        for index, game in enumerate(games, start=1):
+        for game, skip_reason in skipped_games:
+            self._emit_progress(
+                f"Reconcile {sync_kind}: skipping {game['matchup']} ({skip_reason})"
+            )
+            game_catalog_rows.append(
+                (
+                    int(game["game_pk"]),
+                    str(game["official_date"]),
+                    game.get("away_team_name"),
+                    game.get("home_team_name"),
+                    str(game["matchup"]),
+                    None,
+                    scanned_at,
+                )
+            )
+
+        total_games = len(eligible_games)
+        for index, game in enumerate(eligible_games, start=1):
             if _should_log_progress(index, total_games):
                 self._emit_progress(
                     f"Reconcile {sync_kind}: scanning game {index}/{total_games} ({game['matchup']})"
