@@ -104,6 +104,53 @@ def _team_name_map(db: Database, year: int) -> Dict[str, str]:
     }
 
 
+def _team_totals_by_abbr(db: Database, year: int, game_type: str) -> Dict[str, Dict[str, int]]:
+    batting_rows = db.fetch_leaderboard_rows(year, game_type, "batting-team")
+    pitcher_rows = db.fetch_leaderboard_rows(year, game_type, "pitcher")
+    catcher_rows = db.fetch_leaderboard_rows(year, game_type, "catcher")
+
+    totals: Dict[str, Dict[str, int]] = {}
+
+    def ensure(team_abbr: str) -> Dict[str, int]:
+        return totals.setdefault(
+            team_abbr,
+            {
+                "batting_overturns": 0,
+                "batting_challenges": 0,
+                "pitcher_overturns": 0,
+                "pitcher_challenges": 0,
+                "catcher_overturns": 0,
+                "catcher_challenges": 0,
+            },
+        )
+
+    for row in batting_rows:
+        team_abbr = _text(row, "team_abbr")
+        if not team_abbr:
+            continue
+        team_totals = ensure(team_abbr)
+        team_totals["batting_overturns"] += int(_number(row, "n_overturns"))
+        team_totals["batting_challenges"] += int(_number(row, "n_challenges"))
+
+    for row in pitcher_rows:
+        team_abbr = _text(row, "team_abbr")
+        if not team_abbr:
+            continue
+        team_totals = ensure(team_abbr)
+        team_totals["pitcher_overturns"] += int(_number(row, "n_overturns"))
+        team_totals["pitcher_challenges"] += int(_number(row, "n_challenges"))
+
+    for row in catcher_rows:
+        team_abbr = _text(row, "team_abbr")
+        if not team_abbr:
+            continue
+        team_totals = ensure(team_abbr)
+        team_totals["catcher_overturns"] += int(_number(row, "n_overturns"))
+        team_totals["catcher_challenges"] += int(_number(row, "n_challenges"))
+
+    return totals
+
+
 class AnalyticsService:
     def __init__(self, db: Database) -> None:
         self.db = db
@@ -139,6 +186,7 @@ class AnalyticsService:
 
     async def build_team_report(self, team_query: str, year: int, game_type: str) -> AnalyticsReport:
         batting_rows = self.db.fetch_leaderboard_rows(year, game_type, "batting-team")
+        team_totals = _team_totals_by_abbr(self.db, year, game_type)
         ranked = sorted(
             (
                 row
@@ -153,21 +201,35 @@ class AnalyticsService:
 
         row = ranked[0]
         team_abbr = _text(row, "team_abbr")
-        pitcher_rows = [entry for entry in self.db.fetch_leaderboard_rows(year, game_type, "pitcher") if _text(entry, "team_abbr") == team_abbr]
-        catcher_rows = [entry for entry in self.db.fetch_leaderboard_rows(year, game_type, "catcher") if _text(entry, "team_abbr") == team_abbr]
-        fielding_overturns = sum(int(_number(entry, "n_overturns")) for entry in pitcher_rows + catcher_rows)
-        fielding_challenges = sum(int(_number(entry, "n_challenges")) for entry in pitcher_rows + catcher_rows)
-        pitcher_overturns = sum(int(_number(entry, "n_overturns")) for entry in pitcher_rows)
-        pitcher_challenges = sum(int(_number(entry, "n_challenges")) for entry in pitcher_rows)
-        catcher_overturns = sum(int(_number(entry, "n_overturns")) for entry in catcher_rows)
-        catcher_challenges = sum(int(_number(entry, "n_challenges")) for entry in catcher_rows)
+        totals = team_totals.get(team_abbr, {})
+        batting_overturns = totals.get("batting_overturns", int(_number(row, "n_overturns")))
+        batting_challenges = totals.get("batting_challenges", int(_number(row, "n_challenges")))
+        pitcher_overturns = totals.get("pitcher_overturns", 0)
+        pitcher_challenges = totals.get("pitcher_challenges", 0)
+        catcher_overturns = totals.get("catcher_overturns", 0)
+        catcher_challenges = totals.get("catcher_challenges", 0)
+        fielding_overturns = pitcher_overturns + catcher_overturns
+        fielding_challenges = pitcher_challenges + catcher_challenges
+        ordered = sorted(
+            team_totals.items(),
+            key=lambda item: (
+                ((item[1]["batting_overturns"] + item[1]["pitcher_overturns"] + item[1]["catcher_overturns"]) /
+                 (item[1]["batting_challenges"] + item[1]["pitcher_challenges"] + item[1]["catcher_challenges"]))
+                if (item[1]["batting_challenges"] + item[1]["pitcher_challenges"] + item[1]["catcher_challenges"])
+                else 0.0,
+                item[1]["batting_challenges"] + item[1]["pitcher_challenges"] + item[1]["catcher_challenges"],
+            ),
+            reverse=True,
+        )
+        rank = next((index + 1 for index, entry in enumerate(ordered) if entry[0] == team_abbr), len(ordered))
         team_names = _team_name_map(self.db, year)
         team_name = _text(row, "player_name") or team_names.get(team_abbr) or team_abbr or team_query
         summary = (
             f"Team {team_name}: "
-            f"batting {_percent_with_counts(int(_number(row, 'n_overturns')), int(_number(row, 'n_challenges')))} "
+            f"batting {_percent_with_counts(batting_overturns, batting_challenges)} "
             f"fielding {_percent_with_counts(fielding_overturns, fielding_challenges)} "
-            f"[pitcher {pitcher_overturns}/{pitcher_challenges} catcher {catcher_overturns}/{catcher_challenges}]"
+            f"[pitcher {pitcher_overturns}/{pitcher_challenges} catcher {catcher_overturns}/{catcher_challenges}] "
+            f"[rank {rank}/{len(ordered)}]"
         )
         return AnalyticsReport(summary=summary, untracked_errors=[])
 

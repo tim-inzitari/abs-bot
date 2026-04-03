@@ -23,29 +23,48 @@ def db(tmp_path: Path) -> Database:
         2026,
         "regular",
         "pitcher",
-        [{"id": 3, "player_name": "Pitcher One", "team_abbr": "DET", "n_challenges": 8, "n_overturns": 4, "rate_overturns": 0.5}],
+        [
+            {"id": 3, "player_name": "Pitcher One", "team_abbr": "DET", "n_challenges": 8, "n_overturns": 4, "rate_overturns": 0.5},
+            {"id": 30, "player_name": "Pitcher Two", "team_abbr": "COL", "n_challenges": 10, "n_overturns": 2, "rate_overturns": 0.2},
+        ],
     )
     database.replace_leaderboard_rows(
         2026,
         "regular",
         "catcher",
-        [{"id": 4, "player_name": "Catcher One", "team_abbr": "DET", "n_challenges": 12, "n_overturns": 6, "rate_overturns": 0.5}],
+        [
+            {"id": 4, "player_name": "Catcher One", "team_abbr": "DET", "n_challenges": 12, "n_overturns": 6, "rate_overturns": 0.5},
+            {"id": 40, "player_name": "Catcher Two", "team_abbr": "COL", "n_challenges": 5, "n_overturns": 1, "rate_overturns": 0.2},
+        ],
     )
     database.replace_leaderboard_rows(
         2026,
         "regular",
         "batting-team",
-        [{
-            "id": 5,
-            "player_name": "Detroit Tigers",
-            "team_abbr": "DET",
-            "n_challenges": 20,
-            "n_overturns": 12,
-            "rate_overturns": 0.6,
-            "n_challenges_against": 10,
-            "n_overturns_against": 4,
-            "rate_overturns_against": 0.4,
-        }],
+        [
+            {
+                "id": 5,
+                "player_name": "Detroit Tigers",
+                "team_abbr": "DET",
+                "n_challenges": 20,
+                "n_overturns": 12,
+                "rate_overturns": 0.6,
+                "n_challenges_against": 10,
+                "n_overturns_against": 4,
+                "rate_overturns_against": 0.4,
+            },
+            {
+                "id": 50,
+                "player_name": "Colorado Rockies",
+                "team_abbr": "COL",
+                "n_challenges": 20,
+                "n_overturns": 5,
+                "rate_overturns": 0.25,
+                "n_challenges_against": 8,
+                "n_overturns_against": 3,
+                "rate_overturns_against": 0.375,
+            },
+        ],
     )
     database.replace_player_positions(2026, [(1, "Player One", "RF"), (2, "Player Two", "C")])
     database.replace_umpire_games(2026, "regular", [(10, "Aug 23", "Rockies @ Tigers", "C.B. Bucknor", 200, 70, 130)])
@@ -103,7 +122,65 @@ async def test_team_report_includes_opponent_counts_when_available(db: Database)
 
     report = await service.build_team_report("Detroit", 2026, "regular")
 
-    assert report.summary == "Team Detroit Tigers: batting 60.0% (12/20) fielding 50.0% (10/20) [pitcher 4/8 catcher 6/12]"
+    assert report.summary == "Team Detroit Tigers: batting 60.0% (12/20) fielding 50.0% (10/20) [pitcher 4/8 catcher 6/12] [rank 1/2]"
+
+
+@pytest.mark.asyncio
+async def test_team_rank_uses_only_team_initiated_batting_and_fielding_challenges(db: Database) -> None:
+    service = AnalyticsService(db)
+    db.replace_leaderboard_rows(
+        2026,
+        "regular",
+        "batting-team",
+        [
+            {
+                "id": 5,
+                "player_name": "Detroit Tigers",
+                "team_abbr": "DET",
+                "n_challenges": 20,
+                "n_overturns": 12,
+                "rate_overturns": 0.6,
+                "n_challenges_against": 99,
+                "n_overturns_against": 99,
+                "rate_overturns_against": 1.0,
+            },
+            {
+                "id": 50,
+                "player_name": "Colorado Rockies",
+                "team_abbr": "COL",
+                "n_challenges": 20,
+                "n_overturns": 7,
+                "rate_overturns": 0.35,
+                "n_challenges_against": 0,
+                "n_overturns_against": 0,
+                "rate_overturns_against": 0.0,
+            },
+        ],
+    )
+    db.replace_leaderboard_rows(
+        2026,
+        "regular",
+        "pitcher",
+        [
+            {"id": 3, "player_name": "Pitcher One", "team_abbr": "DET", "n_challenges": 8, "n_overturns": 4, "rate_overturns": 0.5},
+            {"id": 30, "player_name": "Pitcher Two", "team_abbr": "COL", "n_challenges": 10, "n_overturns": 4, "rate_overturns": 0.4},
+        ],
+    )
+    db.replace_leaderboard_rows(
+        2026,
+        "regular",
+        "catcher",
+        [
+            {"id": 4, "player_name": "Catcher One", "team_abbr": "DET", "n_challenges": 12, "n_overturns": 6, "rate_overturns": 0.5},
+            {"id": 40, "player_name": "Catcher Two", "team_abbr": "COL", "n_challenges": 5, "n_overturns": 1, "rate_overturns": 0.2},
+        ],
+    )
+
+    report = await service.build_team_report("Detroit", 2026, "regular")
+
+    assert "batting 60.0% (12/20)" in report.summary
+    assert "fielding 50.0% (10/20)" in report.summary
+    assert "[rank 1/2]" in report.summary
 
 
 @pytest.mark.asyncio
@@ -113,8 +190,8 @@ async def test_league_report_includes_role_counts(db: Database) -> None:
     report = await service.build_league_report(2026, "regular")
 
     assert report.summary == (
-        "League 2026: batter:60.0% (12/20) pitcher:50.0% (4/8) catcher:50.0% (6/12) "
-        "batting-team:60.0% (12/20) [top position RF:10]"
+        "League 2026: batter:60.0% (12/20) pitcher:33.3% (6/18) catcher:41.2% (7/17) "
+        "batting-team:42.5% (17/40) [top position RF:10]"
     )
 
 
